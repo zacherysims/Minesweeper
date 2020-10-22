@@ -18,6 +18,22 @@ function array2d(nrows, ncols, val) {
     return res;
 }
 
+function absorbEvent_(event) {
+    var e = event || window.event;
+    e.preventDefault && e.preventDefault();
+    e.stopPropagation && e.stopPropagation();
+    e.cancelBubble = true;
+    e.returnValue = false;
+    return false;
+  
+  }
+  function preventLongPressMenu(node) {
+    node.ontouchmove = absorbEvent_;
+    node.ontouchcancel = absorbEvent_;
+    node.ontouchend = absorbEvent_;
+    node.ontouchstart = absorbEvent_;
+  }
+
 function rndInt(min, max) {
     [min, max] = [Math.ceil(min), Math.floor(max)]
     return min + Math.floor(Math.random() * (max - min + 1));
@@ -31,6 +47,7 @@ function prepare_dom(s) {
         card.className = "card";
         card.setAttribute("data-cardInd", i);
         card.oncontextmenu = function () { return false; };
+        preventLongPressMenu(card);
         card.addEventListener("mousedown", (event) => {
             handleCellClick(event, s, i);
         });
