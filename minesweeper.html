@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width">
+    <title>Minesweeper</title>
+    <link href="stylesheet.css" rel="stylesheet" type="text/css" />
+</head>
+<body>
+    <div class="menu">
+        <div class="menuButton" data-size="8x10"></div>
+        <div class="menuButton" data-size="14x18"></div>
+        <div class="menuButton" data-size="20x24"></div>
+      </div>
+      <div class="gridwrapper">
+        <div class="grid"></div>
+      </div>
+      <div class="status">
+        Mines: <span class="mineCount">0</span>
+        Flags: <span class="flagCount">0</span>
+        <br>
+        Time: <span class="time">0 seconds</span>
+      </div>
+      <div id="overlaywin">
+        <div id="overlayin">
+          <p class="big glow">Congratulations, you won!!!</p>
+          <p class="lighter">You won in <span class="endTime">0</span> seconds.</p>
+          <p class="lighter">Click anywhere to start a new game.
+        </div>
+      </div>
+      <div id="overlayloss">
+        <div id="overlayin">
+          <p class="big glow">Sorry, you lost :(</p>
+          <p class="lighter">You lost in <span class="endTime">0</span> seconds.</p>
+          <p class="lighter">Click anywhere to start a new game.
+        </div>
+      </div>
+      
+    <script src="main.js"></script>
+</body>
+</html>
