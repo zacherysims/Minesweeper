@@ -2,8 +2,6 @@
 
 window.addEventListener('load', main);
 
-var touchTimer;
-
 const STATE_HIDDEN = "hidden";
 const STATE_SHOWN = "shown";
 const STATE_MARKED = "marked";
@@ -18,22 +16,6 @@ function array2d(nrows, ncols, val) {
     return res;
 }
 
-function absorbEvent_(event) {
-    var e = event || window.event;
-    e.preventDefault && e.preventDefault();
-    e.stopPropagation && e.stopPropagation();
-    e.cancelBubble = true;
-    e.returnValue = false;
-    return false;
-  
-  }
-  function preventLongPressMenu(node) {
-    node.ontouchmove = absorbEvent_;
-    node.ontouchcancel = absorbEvent_;
-    node.ontouchend = absorbEvent_;
-    node.ontouchstart = absorbEvent_;
-  }
-
 function rndInt(min, max) {
     [min, max] = [Math.ceil(min), Math.floor(max)]
     return min + Math.floor(Math.random() * (max - min + 1));
@@ -46,34 +28,16 @@ function prepare_dom(s) {
         const card = document.createElement("div");
         card.className = "card";
         card.setAttribute("data-cardInd", i);
-        card.oncontextmenu = function () { return false; };
-        preventLongPressMenu(card);
-        card.addEventListener("mousedown", (event) => {
-            handleCellClick(event, s, i);
+        card.addEventListener("click", () => {
+            card_click_cb(s, card, i);
         });
-        card.addEventListener("touchstart", () => {
-            touchTimer = setTimeout(() => {
-                game.mark(i);
-                touchTimer = null;
-            }, 1000);
-        });
-        card.addEventListener("touchend", () => {
-            if (touchTimer) {
-                clearTimeout(touchTimer);
-                touchTimer = null;
-                s.uncover(i);
-            }
-        });
+        card.addEventListener("contextmenu", function (event) {
+            mark(s, card, i);
+            render(s);
+            event.preventDefault();
+            return false;
+        }, false)
         grid.appendChild(card);
-    }
-}
-
-function handleCellClick(event, s, ind) {
-    if (event.buttons == 1) {
-        card_click_cb(s, ind);
-    }
-    else if (event.buttons == 2) {
-        mark(s, ind);
     }
 }
 
@@ -136,7 +100,7 @@ function sprinkleMines(s, ind) {
     console.log(mines.join("\n"), "\n");
 }
 
-function uncover(s, ind) {
+function uncover(s, card_div, ind) {
     const col = ind % s.cols;
     const row = Math.floor(ind / s.cols);
 
@@ -159,7 +123,6 @@ function uncover(s, ind) {
     ff(row, col);
     // have we hit a mine?
     if (s.cells[row][col].mine) {
-        console.log("we esploded");
         s.exploded = true;
     }
     render(s);
@@ -168,32 +131,31 @@ function uncover(s, ind) {
     return true;
 }
 
-function mark(s, ind) {
+function mark(s, card_div, ind) {
     const col = ind % s.cols;
     const row = Math.floor(ind / s.cols);
     // if coordinates invalid, refuse this request
     if (!validCoord(s, row, col)) return false;
-    if (s.markedcount == s.minecount && s.cells[row][col].state != STATE_MARKED) return false;
+    if (s.markedcount == s.minecount  && s.cells[row][col].state != STATE_MARKED) return false;
     // if cell already uncovered, refuse this
     if (s.cells[row][col].state === STATE_SHOWN) return false;
     // accept the move and flip the marked status
     s.markedcount += s.cells[row][col].state == STATE_MARKED ? -1 : 1;
     s.cells[row][col].state = s.cells[row][col].state == STATE_MARKED ?
         STATE_HIDDEN : STATE_MARKED;
-    render(s);
     return true;
 }
 
-function card_click_cb(s, ind) {
+function card_click_cb(s, card_div, ind) {
     const col = ind % s.cols;
     const row = Math.floor(ind / s.cols);
     console.log("left click at index %d which has %d mines", ind, s.cells[row][col].count);
-    uncover(s, ind);
+    uncover(s, card_div, ind);
     document.querySelectorAll(".endTime").forEach(
         (e)=> {
           let end = new Date();
           e.textContent = String(Math.floor((end-s.start)/1000));
-      })
+      });
     if (s.uncoveredcount == (s.cols * s.rows - s.minecount)) {
         document.querySelector("#overlaywin").classList.toggle("active");
     }
@@ -305,21 +267,21 @@ function getRendering(s) {
 function clear(s) {
     const grid = document.querySelector(".grid");
     grid.style.gridTemplateColumns = `repeat(${s.cols}, 1fr)`;
-    for (let i = 0; i < grid.children.length; i++) {
-        const card = grid.children[i];
-        card.classList.remove("uncovered");
-        card.classList.remove("marked");
-        card.classList.remove("exploded");
-        card.classList.remove("none");
-        card.classList.remove("one");
-        card.classList.remove("two");
-        card.classList.remove("three");
-        card.classList.remove("four");
-        card.classList.remove("five");
-        card.classList.remove("six");
-        card.classList.remove("seven");
-        card.classList.remove("eight");
-        card.innerHTML = "";
+    for( let i = 0 ; i < grid.children.length ; i ++) {
+      const card = grid.children[i];
+      card.classList.remove("uncovered");
+      card.classList.remove("marked");
+      card.classList.remove("exploded");
+      card.classList.remove("none");
+      card.classList.remove("one");
+      card.classList.remove("two");
+      card.classList.remove("three");
+      card.classList.remove("four");
+      card.classList.remove("five");
+      card.classList.remove("six");
+      card.classList.remove("seven");
+      card.classList.remove("eight");
+      card.innerHTML = "";
     }
 }
 
@@ -357,17 +319,20 @@ function main() {
     document.querySelector("#overlaywin").addEventListener("click", () => {
         document.querySelector("#overlaywin").classList.remove("active");
         menu_button_cb(state, state.cols, state.rows);
+        render(state);
     });
 
     // callback for overlay click - hide overlay and regenerate game
     document.querySelector("#overlayloss").addEventListener("click", () => {
         document.querySelector("#overlayloss").classList.remove("active");
         menu_button_cb(state, state.cols, state.rows);
+        render(state);
     });
 
     prepare_dom(state);
     init(state, 10, 8, 10);
     render(state);
+
     setInterval(() => {
         document.querySelectorAll(".time").forEach(
             (e)=> {
